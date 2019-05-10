@@ -1,6 +1,16 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 
-from .models import Question, Choice
+from .forms import CustomUserCreationForm, CustomUserChangeForm
+from .models import Choice, CustomUser, Question
+
+
+class CustomUserAdmin(UserAdmin):
+    add_form = CustomUserCreationForm
+    form = CustomUserChangeForm
+    model = CustomUser
+    list_display = ['email', 'username']
 
 
 class ChoiceInline(admin.TabularInline):
@@ -20,5 +30,6 @@ class QuestionAdmin(admin.ModelAdmin):
     search_fields = ['question_text']
 
 
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Choice)
