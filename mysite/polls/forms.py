@@ -15,3 +15,7 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email')
+
+
+class CreatePollForm(forms.Form):
+    question = forms.CharField(label='Question')

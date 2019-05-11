@@ -7,7 +7,7 @@ from django.utils import timezone
 
 
 from .models import Question, Choice
-from .forms import CustomUserCreationForm
+from .forms import CreatePollForm, CustomUserCreationForm
 
 
 class SignUpView(generic.CreateView):
@@ -39,11 +39,17 @@ class MyPollsView(LoginRequiredMixin, generic.ListView):
         Return the list of all polls owned by logged in user.
         """
         return Question.objects.filter(
-            pub_date__lte=timezone.now()
+            owner=self.request.user.id
         ).order_by('-pub_date')
 
 
-class DetailView(generic.DetailView):
+class CreatePollView(LoginRequiredMixin, generic.FormView):
+    form_class = CreatePollForm
+    success_url = reverse_lazy('polls:mypolls')
+    template_name = 'polls/create_poll.html'
+
+
+class DetailView(LoginRequiredMixin, generic.DetailView):
     model = Question
     template_name = 'polls/detail.html'
 
@@ -54,7 +60,7 @@ class DetailView(generic.DetailView):
         return Question.objects.filter(pub_date__lte=timezone.now())
 
 
-class ResultsView(generic.DetailView):
+class ResultsView(LoginRequiredMixin, generic.DetailView):
     model = Question
     template_name = "polls/results.html"
 

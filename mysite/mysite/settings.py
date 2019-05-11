@@ -124,3 +124,5 @@ AUTH_USER_MODEL = 'polls.CustomUser'
 
 LOGIN_REDIRECT_URL = 'polls:index'
 LOGOUT_REDIRECT_URL = 'polls:index'
+
+LOGIN_URL = 'login'
