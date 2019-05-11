@@ -1,14 +1,16 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.utils import timezone
 
+
 from .models import Question, Choice
 from .forms import CustomUserCreationForm
 
 
-class SignUp(generic.CreateView):
+class SignUpView(generic.CreateView):
     form_class = CustomUserCreationForm
     success_url = reverse_lazy('login')
     template_name = 'registration/signup.html'
@@ -26,6 +28,19 @@ class IndexView(generic.ListView):
         return Question.objects.filter(
             pub_date__lte=timezone.now()
         ).order_by('-pub_date')[:5]
+
+
+class MyPollsView(LoginRequiredMixin, generic.ListView):
+    template_name = 'polls/mypolls.html'
+    context_object_name = "question_list"
+
+    def get_queryset(self):
+        """
+        Return the list of all polls owned by logged in user.
+        """
+        return Question.objects.filter(
+            pub_date__lte=timezone.now()
+        ).order_by('-pub_date')
 
 
 class DetailView(generic.DetailView):
