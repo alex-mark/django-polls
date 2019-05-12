@@ -1,6 +1,7 @@
 from django import forms
+from django.forms import inlineformset_factory
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import CustomUser
+from .models import CustomUser, Question, Choice
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -17,5 +18,17 @@ class CustomUserChangeForm(UserChangeForm):
         fields = ('username', 'email')
 
 
-class CreatePollForm(forms.Form):
-    question = forms.CharField(label='Question')
+# class QuestionForm(forms.ModelForm):
+#     class Meta:
+#         model = Question
+#         fields = ('question_text', 'owner')
+
+
+class ChoiceForm(forms.ModelForm):
+    class Meta:
+        model = Choice
+        fields = ('choice_text',)
+
+
+CreatePollFormSet = inlineformset_factory(
+    Question, Choice, form=ChoiceForm, extra=1)

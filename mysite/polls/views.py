@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.urls import reverse, reverse_lazy
@@ -7,7 +8,7 @@ from django.utils import timezone
 
 
 from .models import Question, Choice
-from .forms import CreatePollForm, CustomUserCreationForm
+from .forms import CustomUserCreationForm, CreatePollFormSet
 
 
 class SignUpView(generic.CreateView):
@@ -43,10 +44,37 @@ class MyPollsView(LoginRequiredMixin, generic.ListView):
         ).order_by('-pub_date')
 
 
-class CreatePollView(LoginRequiredMixin, generic.FormView):
-    form_class = CreatePollForm
+class CreatePollView(LoginRequiredMixin, generic.CreateView):
+    model = Question
+    fields = ['question_text', 'owner']
     success_url = reverse_lazy('polls:mypolls')
     template_name = 'polls/create_poll.html'
+
+    def get_context_data(self, **kwargs):
+        data = super(CreatePollView,
+                     self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['choices'] = CreatePollFormSet(self.request.POST)
+        else:
+            data['choices'] = CreatePollFormSet()
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        choices = context['choices']
+        with transaction.atomic():
+            self.object = form.save()
+
+            if choices.is_valid():
+                choices.instance = self.object
+                choices.save()
+        return super(CreatePollView, self).form_valid(form)
+
+
+class DeletePollView(LoginRequiredMixin, generic.DeleteView):
+    model = Question
+    success_url = reverse_lazy('polls:mypolls')
+    template_name = 'polls/confirm_delete.html'
 
 
 class DetailView(LoginRequiredMixin, generic.DetailView):

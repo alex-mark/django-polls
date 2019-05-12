@@ -1,12 +1,57 @@
 {% extends 'polls/base.html' %}
+{% load static %}
 
 {% block title %}Create a poll{% endblock %}
 
 {% block content %}
-<h1>Create a poll</h1>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Create</button>
-</form>
+<h1>Poll</h1>
+    <hr>
+    <div class="col-md-4">
+        <form action="" method="post">{% csrf_token %}
+            {{ form.as_p }}
+
+            <table class="table">
+                {{ choices.management_form }}
+
+                {% for form in choices.forms %}
+                    {% if forloop.first %}
+                        <thead>
+                        <tr>
+                            {% for field in form.visible_fields %}
+                                <th>{{ field.label|capfirst }}</th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                    {% endif %}
+                    <tr class="{% cycle row1 row2 %} formset_row">
+                        {% for field in form.visible_fields %}
+                            <td>
+                                {# Include the hidden fields in the form #}
+                                {% if forloop.first %}
+                                    {% for hidden in form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+                                {% endif %}
+                                {{ field.errors.as_ul }}
+                                {{ field }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+            <input type="submit" value="Save"/> <a href="{% url 'polls:mypolls' %}">back to the list</a>
+        </form>
+    </div>
+    <script
+        src="https://code.jquery.com/jquery-2.2.4.min.js"
+        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+        crossorigin="anonymous"></script>
+    <script src="{% static 'formset/jquery.formset.js' %}"></script>
+    <script type="text/javascript">
+        $('.formset_row').formset({
+            addText: 'add choice',
+            deleteText: 'remove',
+            prefix: 'choice_set'
+        });
+    </script>
 {% endblock %}
