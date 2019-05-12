@@ -77,6 +77,33 @@ class DeletePollView(LoginRequiredMixin, generic.DeleteView):
     template_name = 'polls/confirm_delete.html'
 
 
+class UpdatePollView(LoginRequiredMixin, generic.UpdateView):
+    model = Question
+    fields = ['question_text', 'owner']
+    success_url = reverse_lazy('polls:mypolls')
+    template_name = 'polls/create_poll.html'
+
+    def get_context_data(self, **kwargs):
+        data = super(UpdatePollView, self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['choices'] = CreatePollFormSet(
+                self.request.POST, instance=self.object)
+        else:
+            data['choices'] = CreatePollFormSet(instance=self.object)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        choices = context['choices']
+        with transaction.atomic():
+            self.object = form.save()
+
+            if choices.is_valid():
+                choices.instance = self.object
+                choices.save()
+        return super(UpdatePollView, self).form_valid(form)
+
+
 class DetailView(LoginRequiredMixin, generic.DetailView):
     model = Question
     template_name = 'polls/detail.html'

@@ -4,8 +4,8 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-  <p>Hi {{ user.username }}! ----- <a href="{% url 'logout' %}">Logout</a></p>
-  <p><a href="{% url 'polls:mypolls' %}">My Polls</a> | History</p> 
+  <p>Hi {{ user.username }}!</p>
+  <p><a href="{% url 'polls:mypolls' %}">My Polls</a> | History | <a href="{% url 'logout' %}">Logout</a></p> 
   {% if latest_question_list %}
     <h1>Recent Polls:</h1>
     <ul>
