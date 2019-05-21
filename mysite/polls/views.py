@@ -1,7 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.utils import timezone
@@ -46,35 +47,31 @@ class MyPollsView(LoginRequiredMixin, generic.ListView):
 
 class CreatePollView(LoginRequiredMixin, generic.CreateView):
     model = Question
-    fields = ['question_text', 'owner']
+    fields = ['question_text']
     success_url = reverse_lazy('polls:mypolls')
     template_name = 'polls/create_poll.html'
 
     def get_context_data(self, **kwargs):
-        data = super(CreatePollView,
-                     self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
+        context['is_owner'] = True
         if self.request.POST:
-            data['choices'] = CreatePollFormSet(self.request.POST)
+            context['choices'] = CreatePollFormSet(self.request.POST)
         else:
-            data['choices'] = CreatePollFormSet()
-        return data
+            context['choices'] = CreatePollFormSet()
+        return context
 
     def form_valid(self, form):
         context = self.get_context_data()
         choices = context['choices']
+        form.instance.owner = self.request.user
         with transaction.atomic():
             self.object = form.save()
 
             if choices.is_valid():
                 choices.instance = self.object
                 choices.save()
+        # why do we need to use super(...) instead of super()
         return super(CreatePollView, self).form_valid(form)
-
-
-class DeletePollView(LoginRequiredMixin, generic.DeleteView):
-    model = Question
-    success_url = reverse_lazy('polls:mypolls')
-    template_name = 'polls/confirm_delete.html'
 
 
 class UpdatePollView(LoginRequiredMixin, generic.UpdateView):
@@ -84,13 +81,19 @@ class UpdatePollView(LoginRequiredMixin, generic.UpdateView):
     template_name = 'polls/create_poll.html'
 
     def get_context_data(self, **kwargs):
-        data = super(UpdatePollView, self).get_context_data(**kwargs)
-        if self.request.POST:
-            data['choices'] = CreatePollFormSet(
-                self.request.POST, instance=self.object)
+        context = super().get_context_data(**kwargs)
+
+        if self.object.owner == self.request.user:
+            context['is_owner'] = True
+
+            if self.request.POST:
+                context['choices'] = CreatePollFormSet(
+                    self.request.POST, instance=self.object)
+            else:
+                context['choices'] = CreatePollFormSet(instance=self.object)
         else:
-            data['choices'] = CreatePollFormSet(instance=self.object)
-        return data
+            context['is_owner'] = False
+        return context
 
     def form_valid(self, form):
         context = self.get_context_data()
@@ -102,6 +105,24 @@ class UpdatePollView(LoginRequiredMixin, generic.UpdateView):
                 choices.instance = self.object
                 choices.save()
         return super(UpdatePollView, self).form_valid(form)
+
+
+class DeletePollView(LoginRequiredMixin, generic.DeleteView):
+    model = Question
+    success_url = reverse_lazy('polls:mypolls')
+    template_name = 'polls/confirm_delete.html'
+
+    # there should be another way to do it (and show message or return HttpResponseForbidden)
+    # def get_queryset(self):
+    #     owner = self.request.user
+    #     return self.model.objects.filter(owner=owner)
+
+    def get_object(self, queryset=None):
+        """ Hook to ensure object is owned by request.user. """
+        obj = super().get_object()
+        if not obj.owner == self.request.user:
+            raise PermissionDenied
+        return obj
 
 
 class DetailView(LoginRequiredMixin, generic.DetailView):
@@ -124,6 +145,13 @@ class ResultsView(LoginRequiredMixin, generic.DetailView):
         Excludes any questions that aren't published yet.
         """
         return Question.objects.filter(pub_date__lte=timezone.now())
+
+    def get_object(self, queryset=None):
+        """ Hook to ensure object is owned by request.user. """
+        obj = super().get_object()
+        if not obj.owner == self.request.user:
+            raise PermissionDenied
+        return obj
 
 
 def vote(request, question_id):
