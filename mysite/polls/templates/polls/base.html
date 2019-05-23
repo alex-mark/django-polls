@@ -11,7 +11,7 @@
 <body>
   <div id="content" class="container">
     {% if user.is_authenticated %}
-      <p><a href="{% url 'polls:mypolls' %}">My Polls</a> | <a href="#">History</a> | <a href="{% url 'polls:index' %}">Recent Polls</a> | <a href="{% url 'logout' %}">Logout</a></p>
+      <p><a href="{% url 'polls:mypolls' %}">My Polls</a> | <a href="#">History</a> | <a href="{% url 'polls:index' %}">Recent Polls</a> | <a href="{% url 'polls:search' %}">Search</a> | <a href="{% url 'logout' %}">Logout</a></p>
     {% endif %}
 
     <div class="md-col-10">

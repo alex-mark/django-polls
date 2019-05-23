@@ -8,6 +8,7 @@ urlpatterns = [
     path('', views.IndexView.as_view(), name='index'),
     path('signup/', views.SignUpView.as_view(), name='signup'),
     path('mypolls/', views.MyPollsView.as_view(), name='mypolls'),
+    path('search/', views.SearchView.as_view(), name='search'),
     path('create/', views.CreatePollView.as_view(), name='create'),
     path('<int:pk>/', views.DetailView.as_view(), name='detail'),
     path('<int:pk>/edit/', views.UpdatePollView.as_view(), name='edit'),

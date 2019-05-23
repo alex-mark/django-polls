@@ -45,6 +45,25 @@ class MyPollsView(LoginRequiredMixin, generic.ListView):
         ).order_by('-pub_date')
 
 
+class SearchView(LoginRequiredMixin, generic.TemplateView):
+    template_name = 'polls/search.html'
+    model = Question
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SearchView, self).get_context_data(*args, **kwargs)
+        question_text = self.request.GET.get('q', '')
+
+        if question_text != '':
+            question_list = self.model.objects.filter(
+                question_text__icontains=question_text)
+            context['q'] = question_text
+        else:
+            question_list = self.model.objects.all()
+
+        context['question_list'] = question_list
+        return context
+
+
 class CreatePollView(LoginRequiredMixin, generic.CreateView):
     model = Question
     fields = ['question_text']
